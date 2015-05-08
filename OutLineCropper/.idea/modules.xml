@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/OutLineCropper.iml" filepath="$PROJECT_DIR$/OutLineCropper.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/outlinecropperlib/outlinecropperlib.iml" filepath="$PROJECT_DIR$/outlinecropperlib/outlinecropperlib.iml" />
     </modules>
   </component>
 </project>
