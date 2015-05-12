@@ -234,7 +234,7 @@ public class CropperDrawingView extends View {
                 imageCrop.getConfig());
 
         Paint paintCrop = new Paint();
-        paintCrop.setColor(Color.RED);
+        paintCrop.setColor(Color.WHITE);
         paintCrop.setStyle(Paint.Style.FILL);
         paintCrop.setAntiAlias(true);
         Canvas canvas = new Canvas(cropResult);
@@ -251,6 +251,14 @@ public class CropperDrawingView extends View {
             paintCrop.setColor(point.getColor());
             canvas.drawPoint(point.getX() - (float)minX, point.getY() - (float)minY, paintCrop);
         }
+
+        //TEST create bitmap create square
+
+        /*cropResult = Bitmap.createBitmap(imageCrop,
+                getMinXCoordinates(),
+                getMinYCoordinates(),
+                getMaxXCoordinates() - getMinXCoordinates(),
+                getMaxYCoordinates() - getMinYCoordinates());*/
 
         return cropResult;
     }
