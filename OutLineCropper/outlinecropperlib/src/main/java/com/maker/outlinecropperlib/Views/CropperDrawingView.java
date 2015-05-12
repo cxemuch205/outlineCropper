@@ -8,6 +8,7 @@ import android.graphics.Color;
 import android.graphics.DashPathEffect;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.PathMeasure;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -27,7 +28,7 @@ public class CropperDrawingView extends View {
 
     private Bitmap mBitmap, imageCrop, cropResult;
     private Canvas mCanvas;
-    private Path mPath;
+    private Path mPath, mPath2;
     private Paint mBitmapPaint, mBitmapCropPaint;
     private Context context;
     private Paint circlePaint;
@@ -92,6 +93,7 @@ public class CropperDrawingView extends View {
     private void init(Context context) {
         this.context = context;
         mPath = new Path();
+        mPath2 = new Path();
         mBitmapPaint = new Paint(Paint.DITHER_FLAG);
         mBitmapCropPaint = new Paint(Paint.FILTER_BITMAP_FLAG);
         circlePaint = new Paint();
@@ -153,6 +155,8 @@ public class CropperDrawingView extends View {
         addToMatrixCrop(x, y);
         mPath.reset();
         mPath.moveTo(x, y);
+        mPath2.reset();
+        mPath2.moveTo(x, y);
         mX = x;
         mY = y;
     }
@@ -166,8 +170,11 @@ public class CropperDrawingView extends View {
         if (matrixDraw == null) {
             matrixDraw = new ArrayList<>();
         }
-        if (imageCrop.getWidth() > (int) x && imageCrop.getHeight() > (int) y) {
-            int color = getColorByPoint(imageCrop.getPixel((int) x, (int) y));
+        if (imageCrop.getWidth() > (int) x
+                && imageCrop.getHeight() > (int) y
+                && x >= 0
+                && y >= 0) {
+            int color = getColorByPixel(imageCrop.getPixel((int) x, (int) y));
             matrixDraw.add(new CropPoint(x, y, color));
         }
 
@@ -179,6 +186,7 @@ public class CropperDrawingView extends View {
         float dy = Math.abs(y - mY);
         if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
             mPath.quadTo(mX, mY, (x + mX) / 2, (y + mY) / 2);
+            mPath2.quadTo(mX, mY, (x + mX) / 2, (y + mY) / 2);
             mX = x;
             mY = y;
 
@@ -189,6 +197,7 @@ public class CropperDrawingView extends View {
 
     private void touch_up() {
         mPath.lineTo(mX, mY);
+        mPath2.lineTo(mX, mY);
         circlePath.reset();
         // commit the path to our offscreen
         mCanvas.drawPath(mPath, mPaint);
@@ -225,11 +234,15 @@ public class CropperDrawingView extends View {
                 imageCrop.getConfig());
 
         Paint paintCrop = new Paint();
+        paintCrop.setColor(Color.RED);
+        paintCrop.setStyle(Paint.Style.FILL);
+        paintCrop.setAntiAlias(true);
         Canvas canvas = new Canvas(cropResult);
 
         //TODO: need make full outline
         //matrixDraw = fillOutline();
 
+        matrixDraw = updateByPath(mPath2);
         matrixDraw = fillMatrixArray();
         int minX = getMinXCoordinates();
         int minY = getMinYCoordinates();
@@ -240,6 +253,32 @@ public class CropperDrawingView extends View {
         }
 
         return cropResult;
+    }
+
+
+
+    private ArrayList<CropPoint> updateByPath(Path path) {
+        ArrayList<CropPoint> newPoints = new ArrayList<>();
+        PathMeasure pm = new PathMeasure(path, false);
+        float length = pm.getLength();
+        float distance = 0f;
+        float speed = 0.5f;
+        float[] aCoordinates = new float[2];
+
+        while ((distance < length)) {
+            // get point from the path
+            pm.getPosTan(distance, aCoordinates, null);
+
+            int color = getColorByPixel(imageCrop.getPixel((int) aCoordinates[0], (int) aCoordinates[1]));
+
+            newPoints.add(new CropPoint(
+                    aCoordinates[0],
+                    aCoordinates[1],
+                    color));
+            distance = distance + speed;
+        }
+
+        return newPoints;
     }
 
     private ArrayList<CropPoint> fillOutline() {
@@ -268,7 +307,7 @@ public class CropperDrawingView extends View {
                     Log.d(TAG, "x1: " + x1 + " | " + newX1 + " \ty1: " + y1 + " | " + newY1 + " INDEX: " + i);
                     newPoints.add(
                             new CropPoint(x1, y1,
-                                    getColorByPoint(imageCrop.getPixel((int) x1, (int) y1))));
+                                    getColorByPixel(imageCrop.getPixel((int) x1, (int) y1))));
                 }
             }
         }
@@ -283,15 +322,15 @@ public class CropperDrawingView extends View {
             boolean havePoint = false;
             int x = -1;
             for (CropPoint point : www) {
-                if (p.getY() <= (point.getY() + 10) && p.getY() >= (point.getY() - 10)) {
+                if (p.getY() <= (point.getY() + 2) && p.getY() >= (point.getY() - 2)) {
                     havePoint = true;
                     if (x < (int) point.getX())
                         x = (int) point.getX();
                 }
             }
             if (havePoint) {
-                for (int i = (int) p.getX(); i < x; i++) {
-                    int color = getColorByPoint(imageCrop.getPixel(i, (int) p.getY()));
+                for (float i = p.getX(); i < x; i+=0.85f) {
+                    int color = getColorByPixel(imageCrop.getPixel((int)i, (int) p.getY()));
                     newPoints.add(new CropPoint(i, p.getY(), color));
                 }
             }
@@ -299,7 +338,7 @@ public class CropperDrawingView extends View {
         return newPoints;
     }
 
-    private int getColorByPoint(int pixel) {
+    private int getColorByPixel(int pixel) {
         int alphaValue = Color.alpha(pixel);
         int redValue = Color.red(pixel);
         int blueValue = Color.blue(pixel);
