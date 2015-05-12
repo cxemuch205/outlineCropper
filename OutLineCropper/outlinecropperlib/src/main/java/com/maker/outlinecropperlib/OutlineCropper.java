@@ -38,6 +38,8 @@ public class OutlineCropper {
                 cropperCallback.onCropEnd(
                         cropperDrawingView.crop());
             }
+            thread.interrupt();
+            thread = null;
         }
     };
 
