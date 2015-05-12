@@ -24,8 +24,8 @@ public class HomeActivity extends ActionBarActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
-        pd = ProgressDialog.show(this, null, "Cropping...");
-        pd.dismiss();
+        pd = new ProgressDialog(this);
+        pd.setMessage("Cropping...");
 
         cropperDrawingView = (CropperDrawingView) findViewById(R.id.cropper_drawing_view);
 

@@ -16,7 +16,6 @@ import android.view.View;
 
 import com.maker.outlinecropperlib.Models.CropPoint;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 
 /**
@@ -25,6 +24,9 @@ import java.util.ArrayList;
 public class CropperDrawingView extends View {
 
     public static final String TAG = "CropperDrawingView";
+
+    private static final float QUALITY_OUTLINE_POINTS = 0.5f; // value need > 0.1 && value < 2.0
+    private static final float QUALITY_FILL_MATRIX_POINTS = 0.75f; // value need > 0.5 && value < 1.0
 
     private Bitmap mBitmap, imageCrop, cropResult;
     private Canvas mCanvas;
@@ -228,14 +230,18 @@ public class CropperDrawingView extends View {
     }
 
     public Bitmap crop() {
+        int minX = getMinXCoordinates();
+        int minY = getMinYCoordinates();
+        int maxX = getMaxXCoordinates();
+        int maxY = getMaxYCoordinates();
+
         cropResult = Bitmap.createBitmap(
-                getMaxXCoordinates() - getMinXCoordinates(),
-                getMaxYCoordinates() - getMinYCoordinates(),
+                maxX - minX,
+                maxY - minY,
                 imageCrop.getConfig());
 
         Paint paintCrop = new Paint();
         paintCrop.setColor(Color.WHITE);
-        paintCrop.setStyle(Paint.Style.FILL);
         paintCrop.setAntiAlias(true);
         Canvas canvas = new Canvas(cropResult);
 
@@ -244,12 +250,10 @@ public class CropperDrawingView extends View {
 
         matrixDraw = updateByPath(mPath2);
         matrixDraw = fillMatrixArray();
-        int minX = getMinXCoordinates();
-        int minY = getMinYCoordinates();
 
         for (CropPoint point : matrixDraw) {
             paintCrop.setColor(point.getColor());
-            canvas.drawPoint(point.getX() - (float)minX, point.getY() - (float)minY, paintCrop);
+            canvas.drawPoint(point.getX() - (float) minX, point.getY() - (float) minY, paintCrop);
         }
 
         //TEST create bitmap create square
@@ -264,13 +268,12 @@ public class CropperDrawingView extends View {
     }
 
 
-
     private ArrayList<CropPoint> updateByPath(Path path) {
         ArrayList<CropPoint> newPoints = new ArrayList<>();
         PathMeasure pm = new PathMeasure(path, false);
         float length = pm.getLength();
         float distance = 0f;
-        float speed = 0.5f;
+        float speed = QUALITY_OUTLINE_POINTS;
         float[] aCoordinates = new float[2];
 
         while ((distance < length)) {
@@ -289,7 +292,7 @@ public class CropperDrawingView extends View {
         return newPoints;
     }
 
-    private ArrayList<CropPoint> fillOutline() {
+    /*private ArrayList<CropPoint> fillOutline() {
         ArrayList<CropPoint> newPoints = new ArrayList<>(matrixDraw);
         for (int i = 0; i < matrixDraw.size()-1; i++) {
             CropPoint lastPoint = matrixDraw.get(i);
@@ -320,7 +323,7 @@ public class CropperDrawingView extends View {
             }
         }
         return newPoints;
-    }
+    }*/
 
     private ArrayList<CropPoint> fillMatrixArray() {
         ArrayList<CropPoint> newPoints = new ArrayList<>(matrixDraw);
@@ -330,19 +333,24 @@ public class CropperDrawingView extends View {
             boolean havePoint = false;
             int x = -1;
             for (CropPoint point : www) {
-                if (p.getY() <= (point.getY() + 2) && p.getY() >= (point.getY() - 2)) {
+                if (p.getY() <= (point.getY() + 2.5f) && p.getY() >= (point.getY() - 2.5f)) {
                     havePoint = true;
                     if (x < (int) point.getX())
                         x = (int) point.getX();
                 }
             }
             if (havePoint) {
-                for (float i = p.getX(); i < x; i+=0.85f) {
-                    int color = getColorByPixel(imageCrop.getPixel((int)i, (int) p.getY()));
+                for (float i = p.getX(); i < x; i += QUALITY_FILL_MATRIX_POINTS) {
+                    int color = getColorByPixel(imageCrop.getPixel((int) i, (int) p.getY()));
                     newPoints.add(new CropPoint(i, p.getY(), color));
                 }
             }
         }
+        www.clear();
+        www = null;
+        matrixDraw.clear();
+        matrixDraw = null;
+
         return newPoints;
     }
 
