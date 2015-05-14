@@ -25,7 +25,7 @@ public class CropperDrawingView extends View {
 
     public static final String TAG = "CropperDrawingView";
 
-    private static final float QUALITY_OUTLINE_POINTS = 0.5f; // value need > 0.1 && value < 2.0
+    private static final float QUALITY_OUTLINE_POINTS = 0.7f; // value need > 0.1 && value < 2.0
     private static final float QUALITY_FILL_MATRIX_POINTS = 0.75f; // value need > 0.5 && value < 1.0
 
     private Bitmap mBitmap, imageCrop, cropResult;
